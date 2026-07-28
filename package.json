@@ -1,0 +1,40 @@
+{
+  "name": "broker-development-kit",
+  "version": "1.0.0",
+  "description": "Broker-independent data layer for market data normalization and validation.",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "dev": "tsx src/index.ts",
+    "clean": "rm -rf dist",
+    "test": "echo \"No tests configured yet\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielhess77/Broker-Development-Kit.git"
+  },
+  "keywords": [
+    "broker",
+    "schwab",
+    "typescript",
+    "market-data",
+    "options",
+    "trading"
+  ],
+  "author": "Daniel Hess",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danielhess77/Broker-Development-Kit/issues"
+  },
+  "homepage": "https://github.com/danielhess77/Broker-Development-Kit#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "eslint": "^10.8.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}
