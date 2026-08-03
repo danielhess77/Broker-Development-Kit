@@ -54,20 +54,33 @@ export default {
 
       }
 
-      case "/history": {
+            case "/history": {
 
-        const symbol = url.searchParams.get("symbol");
+        const symbol =
+          url.searchParams.get("symbol");
 
         if (!symbol) {
+
           return Response.json(
+
             {
-              error: "Missing required query parameter: symbol"
+              error:
+                "Missing required query parameter: symbol"
             },
+
             {
               status: 400
             }
+
           );
+
         }
+
+        const startDate =
+          url.searchParams.get("startDate");
+
+        const endDate =
+          url.searchParams.get("endDate");
 
         const periodType =
           url.searchParams.get("periodType") ?? "year";
@@ -84,20 +97,86 @@ export default {
         const needExtendedHoursData =
           url.searchParams.get("needExtendedHoursData") ?? "false";
 
-        const params = new URLSearchParams({
-          symbol,
-          periodType,
-          period,
-          frequencyType,
-          frequency,
-          needExtendedHoursData,
-        });
+        const params =
+          new URLSearchParams();
+
+        params.set(
+          "symbol",
+          symbol
+        );
+
+        params.set(
+          "frequencyType",
+          frequencyType
+        );
+
+        params.set(
+          "frequency",
+          frequency
+        );
+
+        params.set(
+          "needExtendedHoursData",
+          needExtendedHoursData
+        );
+
+        //--------------------------------------------------
+        // Use explicit date range if supplied.
+        //--------------------------------------------------
+
+        if (
+
+          startDate &&
+          endDate
+
+        ) {
+
+          params.set(
+            "startDate",
+            startDate
+          );
+
+          params.set(
+            "endDate",
+            endDate
+          );
+
+        }
+
+        //--------------------------------------------------
+        // Otherwise use the legacy period request.
+        //--------------------------------------------------
+
+        else {
+
+          params.set(
+            "periodType",
+            periodType
+          );
+
+          params.set(
+            "period",
+            period
+          );
+
+        }
+
+        console.log("");
+        console.log("=== Schwab History ===");
+        console.log(params.toString());
+        console.log("======================");
+        console.log("");
 
         return Response.json(
+
           await schwabRequest(
+
             env,
+
             `/marketdata/v1/pricehistory?${params.toString()}`
+
           )
+
         );
 
       }
