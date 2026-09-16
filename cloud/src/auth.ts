@@ -5,7 +5,7 @@ export interface Env {
   SCHWAB_CLIENT_ID: string;
   SCHWAB_CLIENT_SECRET: string;
   SCHWAB_REDIRECT_URI: string;
-
+  BDK_API_KEY?: string;
   BDK_AUTH: KVNamespace;
 }
 
@@ -25,7 +25,6 @@ export async function loginHandler(
   _request: Request,
   env: Env
 ): Promise<Response> {
-
   const state = crypto.randomUUID();
 
   await env.BDK_AUTH.put("oauth_state", state);
@@ -47,27 +46,19 @@ export async function callbackHandler(
   request: Request,
   env: Env
 ): Promise<Response> {
-
   const url = new URL(request.url);
 
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
 
-  const expectedState =
-    await env.BDK_AUTH.get("oauth_state");
+  const expectedState = await env.BDK_AUTH.get("oauth_state");
 
   if (!code) {
-    return jsonResponse(
-      { error: "Missing authorization code" },
-      400
-    );
+    return jsonResponse({ error: "Missing authorization code" }, 400);
   }
 
   if (state !== expectedState) {
-    return jsonResponse(
-      { error: "Invalid OAuth state" },
-      400
-    );
+    return jsonResponse({ error: "Invalid OAuth state" }, 400);
   }
 
   const credentials = btoa(
@@ -76,13 +67,10 @@ export async function callbackHandler(
 
   const response = await fetch(TOKEN_URL, {
     method: "POST",
-
     headers: {
       Authorization: `Basic ${credentials}`,
-      "Content-Type":
-        "application/x-www-form-urlencoded",
+      "Content-Type": "application/x-www-form-urlencoded",
     },
-
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code,
@@ -96,10 +84,7 @@ export async function callbackHandler(
     return jsonResponse(token, response.status);
   }
 
-  await env.BDK_AUTH.put(
-    "tokens",
-    JSON.stringify(token)
-  );
+  await env.BDK_AUTH.put("tokens", JSON.stringify(token));
 
   return jsonResponse({
     success: true,
