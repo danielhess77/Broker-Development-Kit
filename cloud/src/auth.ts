@@ -1,3 +1,5 @@
+import { writeTokens, type StoredToken } from "./token";
+
 const AUTHORIZE_URL = "https://api.schwabapi.com/v1/oauth/authorize";
 const TOKEN_URL = "https://api.schwabapi.com/v1/oauth/token";
 
@@ -9,10 +11,7 @@ export interface Env {
   BDK_AUTH: KVNamespace;
 }
 
-function jsonResponse(
-  data: unknown,
-  status = 200
-): Response {
+function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data, null, 2), {
     status,
     headers: {
@@ -26,8 +25,7 @@ export async function loginHandler(
   env: Env
 ): Promise<Response> {
   const state = crypto.randomUUID();
-
-  await env.BDK_AUTH.put("oauth_state", state);
+  await env.BDK_AUTH.put("oauth_state", state, { expirationTtl: 600 });
 
   const params = new URLSearchParams({
     response_type: "code",
@@ -36,10 +34,7 @@ export async function loginHandler(
     state,
   });
 
-  return Response.redirect(
-    `${AUTHORIZE_URL}?${params.toString()}`,
-    302
-  );
+  return Response.redirect(`${AUTHORIZE_URL}?${params.toString()}`, 302);
 }
 
 export async function callbackHandler(
@@ -47,17 +42,15 @@ export async function callbackHandler(
   env: Env
 ): Promise<Response> {
   const url = new URL(request.url);
-
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-
   const expectedState = await env.BDK_AUTH.get("oauth_state");
 
   if (!code) {
     return jsonResponse({ error: "Missing authorization code" }, 400);
   }
 
-  if (state !== expectedState) {
+  if (!expectedState || state !== expectedState) {
     return jsonResponse({ error: "Invalid OAuth state" }, 400);
   }
 
@@ -78,16 +71,17 @@ export async function callbackHandler(
     }),
   });
 
-  const token: any = await response.json();
-
+  const token = (await response.json()) as StoredToken;
   if (!response.ok) {
     return jsonResponse(token, response.status);
   }
 
-  await env.BDK_AUTH.put("tokens", JSON.stringify(token));
+  await writeTokens(env, token);
+  await env.BDK_AUTH.delete("oauth_state");
 
   return jsonResponse({
     success: true,
     expires: token.expires_in,
+    next: "Reconnect Grokbot if needed, then ask it to pull quotes.",
   });
 }
